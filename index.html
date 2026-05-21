@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Sink — What does your routine really cost?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0e0d0b;
+  --surf:    #161411;
+  --surf2:   #1d1b17;
+  --bd:      #2c2720;
+  --bd-a:    rgba(205,115,45,0.32);
+  --txt:     #ede8dd;
+  --mut:     #7c7469;
+  --dim:     #4a433b;
+  --acc:     #cd7328;
+  --acc-l:   #e89660;
+  --acc-bg:  rgba(205,115,45,0.10);
+  --acc-hover: rgba(205,115,45,0.18);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  padding: 3.5rem 1.5rem 7rem;
+  line-height: 1.6;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 0%, rgba(205,115,45,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 80% 80%, rgba(205,115,45,0.03) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap {
+  max-width: 860px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Header ─────────────────────────────────────────── */
+.eyebrow {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: var(--acc);
+  margin-bottom: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.eyebrow::before {
+  content: '';
+  display: block;
+  width: 22px;
+  height: 1px;
+  background: var(--acc);
+}
+
+h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  font-size: clamp(2.4rem, 5.5vw, 4rem);
+  line-height: 1.02;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.015em;
+}
+h1 em { font-style: italic; color: var(--acc-l); }
+
+.lead {
+  font-size: 0.9rem;
+  color: var(--mut);
+  margin-bottom: 3rem;
+  max-width: 460px;
+  line-height: 1.75;
+}
+
+/* ── Card ─────────────────────────────────────────────── */
+.card {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: 4px;
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.25rem;
+}
+
+.section-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 1.4rem;
+}
+
+/* ── Input sentence ──────────────────────────────────── */
+.sentence {
+  font-size: clamp(0.92rem, 2vw, 1.12rem);
+  font-weight: 300;
+  color: var(--mut);
+  line-height: 3.2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.28rem;
+}
+
+input, select {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1em;
+  font-weight: 400;
+  color: var(--txt);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--bd-a);
+  outline: none;
+  padding: 0 0.15em 0.06em;
+  transition: border-color 0.18s, color 0.18s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input:focus,
+select:focus { border-color: var(--acc); color: var(--acc-l); }
+
+input[type="number"] {
+  width: 3.5em;
+  text-align: center;
+  -moz-appearance: textfield;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { display: none; }
+
+#iName {
+  font-style: italic;
+  border-bottom-style: dashed;
+  text-align: center;
+  min-width: 4ch;
+  transition: width 0s;
+}
+
+select {
+  cursor: pointer;
+  padding-right: 1.15em;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='5'%3E%3Cpath d='M0 0l4.5 5L9 0z' fill='%237c7469'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.15em center;
+  background-size: 7px 5px;
+}
+
+/* ── Result card ─────────────────────────────────────── */
+.result-card {
+  background: var(--surf);
+  border: 1px solid var(--bd);
+  border-radius: 4px;
+  padding: 2rem 2rem;
+  margin-bottom: 1.25rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2rem;
+  align-items: start;
+  position: relative;
+  overflow: hidden;
+}
+
+.result-card::before {
+  content: '';
+  position: absolute;
+  top: -60px; left: -40px;
+  width: 240px; height: 240px;
+  background: radial-gradient(circle, rgba(205,115,45,0.07) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.r-eyebrow {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--acc);
+  margin-bottom: 0.5rem;
+  position: relative;
+}
+
+.big-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(4.5rem, 13vw, 8.5rem);
+  font-weight: 300;
+  line-height: 0.82;
+  color: var(--txt);
+  letter-spacing: -0.025em;
+  text-shadow: 0 0 80px rgba(205,115,45,0.25);
+  position: relative;
+  transition: opacity 0.1s;
+}
+
+.big-unit {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--acc);
+  margin-top: 0.65rem;
+  position: relative;
+}
+
+.big-sub {
+  font-size: 0.82rem;
+  color: var(--mut);
+  margin-top: 0.3rem;
+  min-height: 1.3em;
+  position: relative;
+}
+
+/* Equivalencies panel */
+.equiv-panel {
+  border-left: 1px solid var(--bd);
+  padding-left: 2rem;
+  min-width: 175px;
+  padding-top: 0.2rem;
+  position: relative;
+}
+
+.eq-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 0.85rem;
+}
+
+.eq-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.42rem;
+  margin-bottom: 0.55rem;
+}
+
+.eq-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.85rem;
+  font-weight: 300;
+  color: var(--txt);
+  line-height: 1;
+}
+
+.eq-desc {
+  font-size: 0.78rem;
+  color: var(--mut);
+  line-height: 1.35;
+}
+
+.ctx-line {
+  font-size: 0.72rem;
+  color: var(--dim);
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--bd);
+  line-height: 1.55;
+}
+
+/* ── Table card ──────────────────────────────────────── */
+.table-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.3rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.73rem;
+  color: var(--mut);
+}
+
+.legend-box {
+  width: 11px; height: 11px;
+  border-radius: 2px;
+  background: var(--acc-bg);
+  border: 1px solid var(--bd-a);
+  flex-shrink: 0;
+}
+
+.tbl-scroll {
+  overflow-x: auto;
+  margin: 0 -0.25rem;
+  padding: 0 0.25rem;
+}
+
+table {
+  width: 100%;
+  min-width: 510px;
+  border-collapse: collapse;
+}
+
+thead th {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mut);
+  background: var(--surf2);
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--bd);
+  text-align: center;
+  white-space: nowrap;
+}
+thead th.th-corner {
+  color: var(--dim);
+  font-size: 0.55rem;
+  font-weight: 600;
+}
+thead th.th-center {
+  color: var(--acc);
+  border-color: var(--bd-a);
+}
+
+tbody td {
+  padding: 0.52rem 0.9rem;
+  border: 1px solid var(--bd);
+  font-size: 0.82rem;
+  font-weight: 300;
+  color: var(--mut);
+  text-align: center;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+tbody td:hover { background: var(--surf2); }
+
+td.td-rh {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--mut);
+  background: var(--surf2);
+  text-align: right;
+  white-space: nowrap;
+}
+td.td-rh.rh-c {
+  color: var(--acc);
+  border-color: var(--bd-a);
+}
+td.td-center {
+  background: var(--acc-bg);
+  border-color: var(--bd-a);
+  color: var(--txt);
+  font-weight: 400;
+}
+td.td-center:hover { background: var(--acc-hover); }
+
+.axis-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dim);
+  text-align: right;
+  margin-top: 0.65rem;
+}
+
+/* ── Footer ──────────────────────────────────────────── */
+footer {
+  margin-top: 4rem;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  border-top: 1px solid var(--bd);
+  padding-top: 1.5rem;
+}
+
+/* ── Animations ──────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card, .result-card {
+  animation: fadeUp 0.5s ease both;
+}
+.result-card { animation-delay: 0.07s; }
+.card.tbl-card  { animation-delay: 0.14s; }
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 620px) {
+  body { padding: 2.5rem 1rem 5rem; }
+  .card, .result-card { padding: 1.4rem 1.25rem; }
+  .result-card {
+    grid-template-columns: 1fr;
+  }
+  .equiv-panel {
+    border-left: none;
+    border-top: 1px solid var(--bd);
+    padding-left: 0;
+    padding-top: 1.25rem;
+    min-width: auto;
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Time Sink</div>
+    <h1>What does your <em>routine</em><br>really cost you?</h1>
+    <p class="lead">Calculate the cumulative time behind any repeating habit — and decide whether it's worth it.</p>
+  </header>
+
+  <!-- Input -->
+  <div class="card">
+    <div class="section-label">Define the activity</div>
+    <div class="sentence">
+      <span>Every</span>
+      <input type="number" id="iEveryM" value="1" min="1" max="9999" aria-label="Repeat every N">
+      <select id="iEveryU" aria-label="Time unit">
+        <option value="hours">hours</option>
+        <option value="days" selected>days</option>
+        <option value="weeks">weeks</option>
+        <option value="months">months</option>
+        <option value="years">years</option>
+      </select>
+      <span>, I do</span>
+      <input type="text" id="iName" value="routine" maxlength="30" spellcheck="false" aria-label="Activity name">
+      <input type="number" id="iN" value="1" min="1" max="9999" style="width:2.8em" aria-label="Number of times">
+      <span id="sTime">time</span>
+      <span>, spending</span>
+      <input type="number" id="iDur" value="5" min="0.01" max="99999" step="0.5" aria-label="Duration">
+      <select id="iDurU" aria-label="Duration unit">
+        <option value="min" selected>min</option>
+        <option value="hours">hours</option>
+      </select>
+      <span>each — over</span>
+      <input type="number" id="iPer" value="5" min="1" max="999" aria-label="Period length">
+      <select id="iPerU" aria-label="Period unit">
+        <option value="days">days</option>
+        <option value="weeks">weeks</option>
+        <option value="months">months</option>
+        <option value="years" selected>years</option>
+      </select>
+      <span>total.</span>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div class="result-card">
+    <div>
+      <div class="r-eyebrow">Total time on &ldquo;<span id="rName">routine</span>&rdquo;</div>
+      <div class="big-num" id="rNum">152</div>
+      <div class="big-unit" id="rUnit">HOURS</div>
+      <div class="big-sub" id="rSub">+ 13 min</div>
+    </div>
+    <div class="equiv-panel">
+      <div class="eq-label">That&rsquo;s roughly&hellip;</div>
+      <div id="rEquiv"></div>
+      <div class="ctx-line" id="rCtx"></div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="card tbl-card">
+    <div class="table-top">
+      <div class="section-label" style="margin-bottom:0">Sensitivity analysis</div>
+      <div class="legend">
+        <span class="legend-box"></span>
+        <span>Your current values</span>
+      </div>
+    </div>
+    <div class="tbl-scroll">
+      <div id="tbl"></div>
+    </div>
+    <div class="axis-label">← duration per session →</div>
+  </div>
+
+  <footer>Time is finite &mdash; spend it on what matters.</footer>
+</div>
+
+<script>
+const UH = { hours:1, days:24, weeks:168, months:730.5, years:8766 };
+const MULTS = [0.25, 0.5, 1, 2, 4];
+const CI = 2;
+
+const $ = id => document.getElementById(id);
+
+function state() {
+  return {
+    name:  $('iName').value.trim() || 'routine',
+    durV:  Math.max(0.01, parseFloat($('iDur').value)   || 5),
+    durU:  $('iDurU').value,
+    n:     Math.max(1,    parseInt($('iN').value)        || 1),
+    emV:   Math.max(1,    parseInt($('iEveryM').value)   || 1),
+    emU:   $('iEveryU').value,
+    perV:  Math.max(0.01, parseFloat($('iPer').value)    || 5),
+    perU:  $('iPerU').value,
+  };
+}
+
+function base(s) {
+  const durH  = s.durU === 'min' ? s.durV / 60 : s.durV;
+  const freqH = s.n / (s.emV * UH[s.emU]);
+  const perH  = s.perV * UH[s.perU];
+  return { durH, freqH, perH };
+}
+
+function tot(durH, freqH, perH) { return durH * freqH * perH; }
+
+/* Smart round */
+function sr(n) {
+  if (n < 2)  return Math.round(n * 100) / 100;
+  if (n < 10) return Math.round(n * 10)  / 10;
+  if (n < 50) return Math.round(n * 2)   / 2;
+  return Math.round(n);
+}
+function dn(n) {
+  const v = sr(n);
+  return Number.isInteger(v) ? String(v) : v.toFixed(v < 10 ? (v < 2 ? 2 : 1) : 1);
+}
+
+/* Format total hours — big display */
+function fmtBig(h) {
+  if (h <= 0) return { num:'0', unit:'minutes', sub:'' };
+  if (h < 1/60) {
+    const s = Math.round(h * 3600);
+    return { num: String(s), unit: s===1?'second':'seconds', sub: '' };
+  }
+  if (h < 1) {
+    const m = Math.round(h * 60);
+    return { num: String(m), unit: m===1?'minute':'minutes', sub: '' };
+  }
+  if (h < 24) {
+    const hr = Math.floor(h), m = Math.round((h - hr) * 60);
+    return { num: String(hr), unit: hr===1?'hour':'hours', sub: m > 0 ? `+ ${m} min` : '' };
+  }
+  const d = h / 24;
+  if (d < 365) {
+    const dv = Math.floor(d), hr = Math.round((d - dv) * 24);
+    return { num: String(dv), unit: dv===1?'day':'days', sub: hr > 0 ? `+ ${hr} hr` : '' };
+  }
+  const y = d / 365.25, yv = Math.floor(y), rd = Math.round((y - yv) * 365.25);
+  return { num: String(yv), unit: yv===1?'year':'years', sub: rd > 0 ? `+ ${rd} days` : '' };
+}
+
+/* Compact format for table cells */
+function fmtS(h) {
+  if (h <= 0) return '—';
+  if (h < 1/60)  return `${Math.round(h*3600)}s`;
+  if (h < 1) {
+    const m = h * 60;
+    return `${m < 10 ? dn(m) : Math.round(m)} min`;
+  }
+  if (h < 24) {
+    const hr = Math.floor(h), m = Math.round((h-hr)*60);
+    return m===0 ? `${hr} hr` : `${hr}h ${m}m`;
+  }
+  const d = h/24;
+  if (d < 365) {
+    const dv = Math.floor(d), hr = Math.round((d-dv)*24);
+    return hr===0 ? `${dv} d` : `${dv}d ${hr}h`;
+  }
+  const yv = Math.floor(d/365.25), rd = Math.round((d/365.25 - yv)*365.25);
+  return rd===0 ? `${yv} yr` : `${yv}y ${rd}d`;
+}
+
+/* Format duration in hours — column headers */
+function fmtDurH(h) {
+  const m = h * 60;
+  if (m < 1)   return `${dn(m*60)}s`;
+  if (m < 60)  return `${dn(m)} min`;
+  return `${dn(h)} hr`;
+}
+
+/* Format frequency per hour — row headers */
+function fmtFreq(fH) {
+  if (fH <= 0) return '—';
+  const pd = fH * 24;
+  if (fH >= 1)   return `${dn(fH)}×/hr`;
+  if (pd >= 1.08) return `${dn(pd)}×/day`;
+  if (pd >= 0.9)  return 'daily';
+  const ed = 1/pd;
+  if (ed < 1.08) return 'daily';
+  if (ed < 7)    return `every ${dn(ed)} days`;
+  const ew = ed/7;
+  if (ew < 1.08) return 'weekly';
+  if (ew < 4.5)  return `every ${dn(ew)} wks`;
+  const em = ed/30.44;
+  if (em < 1.08) return 'monthly';
+  if (em < 12.5) return `every ${dn(em)} mo`;
+  return 'yearly';
+}
+
+/* Human label for duration input */
+function fmtDurI(v, u) {
+  if (u === 'min') {
+    if (v >= 60) { const h=Math.floor(v/60), m=Math.round(v%60); return m?`${h}h ${m}m`:`${h} hr`; }
+    return `${v} min`;
+  }
+  return v === 1 ? '1 hour' : `${v} hours`;
+}
+
+/* Equivalency items */
+function equivs(h) {
+  const out = [];
+  if (h >= 40) {
+    const ww = h / 40;
+    out.push({ n: dn(ww), d: Math.abs(ww-1)<0.05 ? 'work week' : 'work weeks' });
+  } else if (h >= 8) {
+    const wd = h / 8;
+    out.push({ n: dn(wd), d: Math.abs(wd-1)<0.05 ? 'workday (8 hr)' : 'workdays (8 hr)' });
+  }
+  if (h >= 24) {
+    const fd = h / 24;
+    out.push({ n: dn(fd), d: Math.abs(fd-1)<0.05 ? 'full 24-hr day' : 'full 24-hr days' });
+  }
+  return out.slice(0, 2);
+}
+
+/* Main render */
+function render() {
+  const s = state();
+  const { durH, freqH, perH } = base(s);
+  const total = tot(durH, freqH, perH);
+
+  /* Big result */
+  const f = fmtBig(total);
+  $('rNum').textContent  = f.num;
+  $('rUnit').textContent = f.unit.toUpperCase();
+  $('rSub').textContent  = f.sub;
+  $('rName').textContent = s.name;
+
+  /* Equivalencies */
+  const eq = equivs(total);
+  $('rEquiv').innerHTML = eq.length
+    ? eq.map(e => `<div class="eq-row"><span class="eq-num">${e.n}</span><span class="eq-desc">${e.d}</span></div>`).join('')
+    : '<div class="eq-desc" style="color:var(--mut);font-size:.8rem;padding:.25rem 0">—</div>';
+
+  /* Context */
+  $('rCtx').textContent = `${fmtDurI(s.durV, s.durU)} on "${s.name}" \u00b7 ${fmtFreq(freqH)} \u00b7 ${s.perV} ${s.perU} total`;
+
+  /* Grammar: time / times */
+  $('sTime').textContent = s.n === 1 ? 'time' : 'times';
+
+  /* Auto-size name input */
+  $('iName').style.width = Math.max(4, s.name.length + 1) + 'ch';
+
+  /* Build table */
+  const dV = MULTS.map(m => ({ h: durH * m,  lbl: fmtDurH(durH * m) }));
+  const fV = MULTS.map(m => ({ h: freqH * m, lbl: fmtFreq(freqH * m) }));
+
+  let html = '<table><thead><tr>';
+  html += '<th class="th-corner">freq &darr; / dur &rarr;</th>';
+  dV.forEach((d, di) => {
+    html += `<th${di===CI?' class="th-center"':''}>${d.lbl}</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  fV.forEach((fv, fi) => {
+    html += '<tr>';
+    html += `<td class="td-rh${fi===CI?' rh-c':''}">${fv.lbl}</td>`;
+    dV.forEach((d, di) => {
+      const isC = fi===CI && di===CI;
+      html += `<td${isC?' class="td-center"':''}>${fmtS(tot(d.h, fv.h, perH))}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  $('tbl').innerHTML = html;
+}
+
+/* Wire up all inputs */
+['iName','iDur','iDurU','iN','iEveryM','iEveryU','iPer','iPerU'].forEach(id => {
+  $(id).addEventListener('input',  render);
+  $(id).addEventListener('change', render);
+});
+
+render();
+</script>
+</body>
+</html>
